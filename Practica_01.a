@@ -1,0 +1,164 @@
+ORG 00H
+	EXE1 EQU 01H
+	EXE2 EQU 02H
+    EXE3 EQU 03H
+	MOV P0, #0FFH ; Port 0 input (DIP Switch)
+	MOV P1, #0FFH ; Port 1 input (Ping pong buttons)
+	MOV P2, #00H ; Port 2 output (LEDs)
+	MOV P3, #0FFH ; Port 3 input (Exercise Selection)
+		
+	MAIN: MOV A, P3
+	      ANL A, #00000011b ; Filter only the last two bits
+		  
+		  CJNE A, #EXE1, CHECK_IF_EXE2
+		  EXECUTE_EXE1: ACALL SUB_READ
+		  
+          CHECK_IF_EXE2: CJNE A, #EXE2, CHECK_IF_EXE3
+          EXECUTE_EXE2: ACALL SUB_LED_SEQUENCE
+		  
+		  CHECK_IF_EXE3: CJNE A, #EXE3, NO_EXE_SELECTED	
+          EXECUTE_EXE3: ACALL SUB_PING_PONG
+		  
+		  NO_EXE_SELECTED: SJMP MAIN		  
+          
+	      LJMP SKIP_END
+
+; ----------- EXERCISE 1 ----------------- 
+	; Subroutine that will read the byte from P0 and show it on P1
+	SUB_READ: MOV A, P0
+		      MOV P2, A
+		      SJMP SUB_READ
+			  RET
+		  
+; ----------- EXERCISE 2 ----------------- 
+	; Subroutine that will cause a delay
+    SUB_SLEEP: MOV R0, #0FFH
+	           MOV R1, #0FFH
+		       MOV R2, #06H
+	           JUMP_HERE: DJNZ R0, JUMP_HERE
+		                  MOV R0, #0FFH
+		                  DJNZ R1, JUMP_HERE
+					      MOV R1, #0FFH
+					      DJNZ R2, JUMP_HERE
+		       RET
+    
+	; Subroutine that will show a byte in port 2 and rotate its bits
+	SUB_LED_SEQUENCE: MOV A, #01011010b
+	                  ROTATE: RR A ;Rotate Accumulator's bits to the right
+					          MOV P2, A
+						      ACALL SUB_SLEEP
+						      SJMP ROTATE
+                      RET							  
+
+; ----------- EXERCISE 3 ----------------- 
+    DirectionBit EQU 00H
+	SleepSpeedByte EQU 31H
+	CheckSpeedByte EQU 32H
+	SleepSpeedValue EQU 00H
+	HalfDelayValue EQU 00H
+	CheckSpeedValue EQU 00H
+	;BlockMSBPlayerBit EQU 01H
+	;BlockLSBPlayerBit EQU 02H
+	PointsByte EQU 30H
+		
+	; Subroutine that will simulate the game of Ping Pong
+	SUB_PING_PONG: MOV SleepSpeedByte, #SleepSpeedValue
+	               MOV CheckSpeedByte, #CheckSpeedValue
+	PING_PONG_LOOP: ACALL SUB_PING_PONG_SET_BALL
+	               MOV B, #07H ; Number of places before the ball gets to one space previous to the goal
+	               JB DirectionBit, TO_MSB
+				   
+				   TO_LSB: ACALL SUB_SLEEP
+				           RR A
+						   MOV P2, A
+						   DJNZ B, TO_LSB
+						   ACALL SUB_CHECK_DELAY
+						   ;SJMP SUB_PING_PONG
+						   SJMP PING_PONG_LOOP
+						   ;TODO FINISH AFTER 15 POINTS-                                                                                                                         
+				   
+				   TO_MSB: ACALL SUB_SLEEP
+			               RL A
+			               MOV P2, A
+					       DJNZ B, TO_MSB 
+						   ACALL SUB_CHECK_DELAY
+						   SJMP PING_PONG_LOOP
+						   ;SJMP SUB_PING_PONG
+	
+    ; Subroutine that checks the DirectionBit to determine whose turn is next and sets the ball
+    ; to its corresponding starting position	
+    SUB_PING_PONG_SET_BALL: MOV A, #00H
+	                        JNB DirectionBit, MSB_PLAYER_TURN
+							LSB_PLAYER_TURN: SETB ACC.0
+							                 MOV P2, A
+											 RET
+							MSB_PLAYER_TURN: SETB ACC.7
+							                 MOV P2, A
+											 RET
+	
+	; Subroutine that makes a 0.5 second delay
+	SUB_SLEEP_HALF: MOV R0, #0FFH
+	                MOV R1, #0FFH
+		            MOV R2, #04H
+	                JUMP_SLEEP_HALF: DJNZ R0, JUMP_SLEEP_HALF
+		                             MOV R0, #0FFH
+		                             DJNZ R1, JUMP_SLEEP_HALF
+					                 MOV R1, #0FFH
+					                 DJNZ R2, JUMP_SLEEP_HALF
+		            RET
+	
+	; Subroutine that activates when the ball is one place from the goal of the other player, and checks
+	; if he presses the button in time or not. Point handling is done in here
+	SUB_CHECK_DELAY: MOV R0, #0FFH
+	                 MOV R1, #0FFH
+					 ;MOV R2, CheckSpeedByte
+					 
+	                 CHECK_DIRECTION: JB DirectionBit, CHECK_MSB_BUTTON
+				                      SJMP CHECK_LSB_BUTTON
+
+                     CHECK_MSB_BUTTON: JB P1.7, BUTTON_PRESSED
+				                       SJMP WAIT
+				 
+				     CHECK_LSB_BUTTON: JB P1.0, BUTTON_PRESSED
+				                       SJMP WAIT
+				            
+				     WAIT: DJNZ R0, CHECK_DIRECTION
+		                   MOV R0, #0FFH
+		                   DJNZ R1, CHECK_DIRECTION
+					       
+						   ; Add one point to the other player, because the ball went to the goal
+						   JB DirectionBit, POINT_TO_LSB_PLAYER
+						   
+						   POINT_TO_MSB_PLAYER: MOV A, PointsByte
+						                        ADD A, #10H
+												MOV PointsByte, A
+												ACALL SUB_POINT_ANIMATION
+						                        RET
+						   
+						   POINT_TO_LSB_PLAYER: MOV A, PointsByte
+						                        ADD A, #01H
+												MOV PointsByte, A
+												ACALL SUB_POINT_ANIMATION
+												RET
+						   
+						   SUB_POINT_ANIMATION: CPL DirectionBit
+						                        MOV P2, #0FFH
+						                        ACALL SUB_SLEEP_HALF
+											    MOV P2, #00H
+											    ACALL SUB_SLEEP_HALF
+											    MOV P2, #0FFH
+											    ACALL SUB_SLEEP_HALF
+												
+												;MOV SleepSpeedByte, #SleepSpeedValue
+	                                            ;MOV CheckSpeedByte, #CheckSpeedValue
+												RET	
+					 
+					 ; Change the direction of the ball
+				     BUTTON_PRESSED: CPL DirectionBit
+					                 ;DEC SleepSpeedByte
+									 ;DEC SleepSpeedByte
+									 ;DEC CheckSpeedByte
+					                 RET
+				                
+SKIP_END: NOP
+END
