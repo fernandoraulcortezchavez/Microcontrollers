@@ -138,8 +138,8 @@ SUB_ORDER:
 ** Subroutine that takes in a number in two-digit hexadecimal format and displays it on a LCD screen
 */
 SUB_DISPLAY_NUM: 
-                 MOV B, #10H ; Set B to 16H
-                 DIV AB ; Divide Acc by 16H, A will store the first digit and B the second digit of the Acc
+                 MOV B, #10H ; Set B to 16
+                 DIV AB ; Divide Acc by 16, A will store the first digit and B the second digit of the Acc
 				 ; 37H
 				 CJNE A, #0AH, CHECK1
 CHECK1:          JC NUM1 ;Check if the number in A is lesser than 10 or 0AH
