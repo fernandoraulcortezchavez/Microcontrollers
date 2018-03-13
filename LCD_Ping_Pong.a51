@@ -1,4 +1,39 @@
 ORG 00H
+
+MOV P3, #0FFH
+ACALL SUB_INIT
+
+
+
+MSB_PLAYER_TURN: MOV A, #0C2H
+                 ACALL SUB_COMMANDWRT
+                 ACALL SUB_DELAY
+                 MOV A, #'*'
+                 ACALL SUB_DATAWRT
+                 ACALL SUB_DELAY
+MSB_PLAYER_BACK: MOV R5, #0DH
+        SHIFT_R: MOV A, #1CH
+                 ACALL SUB_COMMANDWRT
+                 ACALL SUB_DELAY
+	             DJNZ R5, SHIFT_R
+				 SJMP LSB_PLAYER_BACK
+
+LSB_PLAYER_TURN: MOV A, #0CFH
+                 ACALL SUB_COMMANDWRT
+                 ACALL SUB_DELAY
+                 MOV A, #'*'
+                 ACALL SUB_DATAWRT
+                 ACALL SUB_DELAY
+LSB_PLAYER_BACK: MOV R5, #0DH
+        SHIFT_L: MOV A, #18H
+                 ACALL SUB_COMMANDWRT
+                 ACALL SUB_DELAY
+	             DJNZ R5, SHIFT_L
+				 SJMP MSB_PLAYER_BACK
+
+	  
+
+
 	
 ; -------------------- Helper subroutines ----------------------	
 /*
@@ -56,5 +91,5 @@ REPEAT:    MOV TH0, #3CH
 		   CLR TF0
 		   DJNZ R0, REPEAT
 		   RET
-		   
+		 		   
 END
