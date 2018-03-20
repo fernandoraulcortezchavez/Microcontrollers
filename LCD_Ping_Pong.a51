@@ -3,33 +3,52 @@ ORG 00H
 MOV P3, #0FFH
 ACALL SUB_INIT
 
+GAME_START:	MOV 30H, #00H
+            MOV 31H, #00H
 
+LOOP_START: 
+            JB P3.0, DELIVER_A
+            JB P3.1, DELIVER_B
+			SJMP LOOP_START
 
-MSB_PLAYER_TURN: MOV A, #0C2H
+; ------------- Player A -------------
+DELIVER_A:     JB P3.0, DELIVER_A ;The ball will move until the player unpresses the button
+			   JMP A_PLAYER_TURN
+               
+						  
+			   
+; ---------------- Player B ----------------
+DELIVER_B:     JB P3.0, DELIVER_B ;The ball will move until the player unpresses the button
+			   JMP B_PLAYER_TURN
+
+A_PLAYER_TURN: MOV A, #0C2H
                  ACALL SUB_COMMANDWRT
                  ACALL SUB_DELAY
                  MOV A, #'*'
                  ACALL SUB_DATAWRT
                  ACALL SUB_DELAY
-MSB_PLAYER_BACK: MOV R5, #0DH
+				 
+A_PLAYER_BACK: MOV R5, #0DH
         SHIFT_R: MOV A, #1CH
                  ACALL SUB_COMMANDWRT
-                 ACALL SUB_DELAY
+				 ACALL SUB_LOSS_DELAY
 	             DJNZ R5, SHIFT_R
-				 SJMP LSB_PLAYER_BACK
+ 				 ACALL DELAY_TURN_B
+				 JMP POINT_FOR_A
 
-LSB_PLAYER_TURN: MOV A, #0CFH
+B_PLAYER_TURN: MOV A, #0CFH
                  ACALL SUB_COMMANDWRT
                  ACALL SUB_DELAY
                  MOV A, #'*'
                  ACALL SUB_DATAWRT
                  ACALL SUB_DELAY
-LSB_PLAYER_BACK: MOV R5, #0DH
+B_PLAYER_BACK: MOV R5, #0DH
         SHIFT_L: MOV A, #18H
                  ACALL SUB_COMMANDWRT
-                 ACALL SUB_DELAY
+				 ACALL SUB_LOSS_DELAY
 	             DJNZ R5, SHIFT_L
-				 SJMP MSB_PLAYER_BACK
+				 ACALL DELAY_TURN_A
+				 JMP POINT_FOR_B
 
 	  
 
@@ -91,5 +110,44 @@ REPEAT:    MOV TH0, #3CH
 		   CLR TF0
 		   DJNZ R0, REPEAT
 		   RET
+/*
+** Subroutine that checks if any player pressed in between turns.
+*/ 		   
+SUB_LOSS_DELAY:	MOV R0, #5
+   LOSS_REPEAT:	JB P3.0, POINT_FOR_B ; Player A pressed before correct time
+				JB P3.1, POINT_FOR_A ; Player B pressed before correct time
+				ACALL SUB_DELAY
+				DJNZ R0, LOSS_REPEAT
+				RET
+/*
+** Subroutine that checks for player presses at their turns.
+*/ 
+DELAY_TURN_A:	MOV R0, #5
+TURN_REPEAT_A:	JB P3.0, A_PLAYER_BACK ; Player A pressed correct time
+				JB P3.1, POINT_FOR_A ; Player B pressed before correct time
+				ACALL SUB_DELAY
+				DJNZ R0, LOSS_REPEAT_A
+				RET
+				
+DELAY_TURN_B:	MOV R0, #5
+TURN_REPEAT_B:	JB P3.0, POINT_FOR_B ; Player A pressed before correct time
+				JB P3.1, B_PLAYER_BACK; Player B pressed correct time
+				ACALL SUB_DELAY
+				DJNZ R0, LOSS_REPEAT_B
+				RET
+			
+POINT_FOR_A: INC 30H
+			 ACALL SUB_SHOW_POINTS
+			 MOV A, 30H
+			 CJNE A, #04H, LOOP_START
+			 ;Todo Display score
+			 SJMP GAME_START
+			          
+POINT_FOR_B: INC 31H
+			 ACALL SUB_SHOW_POINTS
+			 MOV A, 31H
+			 CJNE A, #04H, LOOP_START
+			 ;TODO Display score
+			 SJMP GAME_START			
 		 		   
 END
