@@ -21,35 +21,126 @@ DELIVER_A:     JB P3.0, DELIVER_A ;The ball will move until the player unpresses
 DELIVER_B:     JB P3.0, DELIVER_B ;The ball will move until the player unpresses the button
 			   JMP B_PLAYER_TURN
 
-A_PLAYER_TURN: MOV A, #0C2H
+A_PLAYER_TURN:   MOV A, #0C2H
                  ACALL SUB_COMMANDWRT
                  ACALL SUB_DELAY
                  MOV A, #'*'
                  ACALL SUB_DATAWRT
                  ACALL SUB_DELAY
 				 
-A_PLAYER_BACK: MOV R5, #0DH
+A_PLAYER_BACK:   MOV R5, #0DH
         SHIFT_R: MOV A, #1CH
                  ACALL SUB_COMMANDWRT
-				 ACALL SUB_LOSS_DELAY
-	             DJNZ R5, SHIFT_R
- 				 ACALL DELAY_TURN_B
-				 JMP POINT_FOR_A
+				 ACALL SUB_DELAY
+				 ACALL SUB_DELAY
+				 ACALL SUB_DELAY
+				 
+LOSS_DELAY1:	MOV R1, #03H
+  LOSS_REPEAT1:	JB P3.0, POINT_FOR_B ; Player A pressed before correct time
+				JB P3.1, POINT_FOR_A ; Player B pressed before correct time
+				ACALL SUB_DELAY
+				DJNZ R1, LOSS_REPEAT1
+				 
+	            DJNZ R5, SHIFT_R
+				MOV A, #1CH
+                ACALL SUB_COMMANDWRT
+				ACALL SUB_DELAY
 
+
+DELAY_TURN_B:	MOV R1, #05H
+TURN_REPEAT_B:	JB P3.0, POINT_FOR_B ; Player A pressed before correct time
+				JB P3.1, B_PLAYER_BACK; Player B pressed correct time
+				ACALL SUB_DELAY
+				;DJNZ R0, LOSS_REPEAT_B
+				DJNZ R1, TURN_REPEAT_B
+
+				JMP POINT_FOR_A
+
+POINT_FOR_A: INC 30H
+			 ;ACALL SUB_SHOW_POINTS
+			 ;MOV A, 30H
+			 MOV A, #01H
+			 ACALL SUB_COMMANDWRT
+			 ACALL SUB_DELAY
+			 CJNE A, #04H, JUMP_TAG
+			 ;Todo Display score
+			 LJMP GAME_START
+			          
+POINT_FOR_B: INC 31H
+			 ;ACALL SUB_SHOW_POINTS
+			 ;MOV A, 31H
+			 MOV A, #01H
+			 ACALL SUB_COMMANDWRT
+			 ACALL SUB_DELAY
+			 CJNE A, #04H, JUMP_TAG
+			 ;TODO Display score
+			 LJMP GAME_START	
+
+JUMP_TAG: LJMP LOOP_START
+
+;-------------------------------------Player B-----------------------
 B_PLAYER_TURN: MOV A, #0CFH
                  ACALL SUB_COMMANDWRT
                  ACALL SUB_DELAY
                  MOV A, #'*'
                  ACALL SUB_DATAWRT
                  ACALL SUB_DELAY
-B_PLAYER_BACK: MOV R5, #0DH
+				 
+B_PLAYER_BACK:   MOV R5, #0DH
         SHIFT_L: MOV A, #18H
                  ACALL SUB_COMMANDWRT
-				 ACALL SUB_LOSS_DELAY
+				 ACALL SUB_DELAY
+				 ACALL SUB_DELAY
+				 ACALL SUB_DELAY
+				 
+	LOSS_DELAY2: MOV R1, #03h
+LOSS_REPEAT2:    JB P3.0, POINT_FOR_B ; Player A pressed before correct time
+				 JB P3.1, POINT_FOR_A ; Player B pressed before correct time
+				 ACALL SUB_DELAY
+				 DJNZ R1, LOSS_REPEAT2
+				 
 	             DJNZ R5, SHIFT_L
-				 ACALL DELAY_TURN_A
-				 JMP POINT_FOR_B
+				 MOV A, #18H
+                 ACALL SUB_COMMANDWRT
+				 ACALL SUB_DELAY
 
+				 
+DELAY_TURN_A:	MOV R1, #05h
+TURN_REPEAT_A:	JB P3.0, A_PLAYER_BACK ; Player A pressed correct time
+				JB P3.1, POINT_FOR_A ; Player B pressed before correct time
+				ACALL SUB_DELAY
+				;DJNZ R0, LOSS_REPEAT_A
+				DJNZ R1, TURN_REPEAT_A
+				 
+				JMP POINT_FOR_B
+
+/*
+** Subroutine that checks if any player pressed in between turns.
+*/ 		   
+;SUB_LOSS_DELAY:	MOV R0, #5
+;   LOSS_REPEAT:	JB P3.0, POINT_FOR_B ; Player A pressed before correct time
+;				JB P3.1, POINT_FOR_A ; Player B pressed before correct time
+;				ACALL SUB_DELAY
+;				DJNZ R0, LOSS_REPEAT
+;				RET
+/*
+** Subroutine that checks for player presses at their turns.
+*/ 
+;DELAY_TURN_A:	MOV R0, #5
+;TURN_REPEAT_A:	JB P3.0, A_PLAYER_BACK ; Player A pressed correct time
+;				JB P3.1, POINT_FOR_A ; Player B pressed before correct time
+;				ACALL SUB_DELAY
+;				;DJNZ R0, LOSS_REPEAT_A
+;				DJNZ R0, TURN_REPEAT_A
+;				RET
+				
+;DELAY_TURN_B:	MOV R0, #5
+;TURN_REPEAT_B:	JB P3.0, POINT_FOR_B ; Player A pressed before correct time
+;				JB P3.1, B_PLAYER_BACK; Player B pressed correct time
+;				ACALL SUB_DELAY
+;				;DJNZ R0, LOSS_REPEAT_B
+;				DJNZ R0, TURN_REPEAT_B
+;				RET
 	  
 
 
@@ -100,7 +191,7 @@ SUB_DATAWRT:
 ** Subroutine that generates a 250 ms delay, generally used between LCD operations.
 */ 			   
 SUB_DELAY: 
-           MOV R0, #05H
+           MOV R0, #02H
 REPEAT:    MOV TH0, #3CH
            MOV TL0, #0B0H
            MOV TMOD, #01H
@@ -110,44 +201,8 @@ REPEAT:    MOV TH0, #3CH
 		   CLR TF0
 		   DJNZ R0, REPEAT
 		   RET
-/*
-** Subroutine that checks if any player pressed in between turns.
-*/ 		   
-SUB_LOSS_DELAY:	MOV R0, #5
-   LOSS_REPEAT:	JB P3.0, POINT_FOR_B ; Player A pressed before correct time
-				JB P3.1, POINT_FOR_A ; Player B pressed before correct time
-				ACALL SUB_DELAY
-				DJNZ R0, LOSS_REPEAT
-				RET
-/*
-** Subroutine that checks for player presses at their turns.
-*/ 
-DELAY_TURN_A:	MOV R0, #5
-TURN_REPEAT_A:	JB P3.0, A_PLAYER_BACK ; Player A pressed correct time
-				JB P3.1, POINT_FOR_A ; Player B pressed before correct time
-				ACALL SUB_DELAY
-				DJNZ R0, LOSS_REPEAT_A
-				RET
-				
-DELAY_TURN_B:	MOV R0, #5
-TURN_REPEAT_B:	JB P3.0, POINT_FOR_B ; Player A pressed before correct time
-				JB P3.1, B_PLAYER_BACK; Player B pressed correct time
-				ACALL SUB_DELAY
-				DJNZ R0, LOSS_REPEAT_B
-				RET
+
 			
-POINT_FOR_A: INC 30H
-			 ACALL SUB_SHOW_POINTS
-			 MOV A, 30H
-			 CJNE A, #04H, LOOP_START
-			 ;Todo Display score
-			 SJMP GAME_START
-			          
-POINT_FOR_B: INC 31H
-			 ACALL SUB_SHOW_POINTS
-			 MOV A, 31H
-			 CJNE A, #04H, LOOP_START
-			 ;TODO Display score
-			 SJMP GAME_START			
+
 		 		   
 END
