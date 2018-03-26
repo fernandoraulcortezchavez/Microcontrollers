@@ -1,0 +1,155 @@
+ORG 00H
+/* P3.2 is the trigger
+** P2.4 to P2.7 is the hex input of the keyboard matrix processing
+** 00H is the bit address for the first digit or second digit
+** R0 delay register
+** R1 data memory pointer register
+*/
+SJMP MAIN
+
+ORG 03H
+EXTERNAL_INT0: 
+               MOV A, P2
+			   ANL A, #11110000b ; Filter the last 4 significant bits
+	           JNC FIRST_DIGIT
+			   SWAP A
+			   ADD A, @R1
+			   MOV @R1, A
+			   INC R1 ; Increment the number pointer
+			   CPL C
+			   MOV @R1, #00H ;Move a null terminator
+			   SJMP WAIT_UNPRESS
+			   
+FIRST_DIGIT:   MOV @R1, A
+               CPL C
+               
+WAIT_UNPRESS:  JNB P3.2, WAIT_UNPRESS
+               RETI
+			   
+; ------------------------- MAIN -------------------------------
+MAIN: 
+      ACALL SUB_INIT
+	  CLR C
+	  MOV P2, #0FFH
+      SETB IE.0
+	  SETB IE.7
+	  MOV R1, #30H ; Initial memory location
+HERE: SJMP HERE
+      
+
+
+/*
+** Subroutine that takes in a number in two-digit hexadecimal format at A and displays it on a LCD screen
+*/
+SUB_DISPLAY_TWO_DIGIT_NUM: 
+                 MOV B, #10H ; Set B to 16H
+                 DIV AB ; Divide Acc by 16H, A will store the first digit and B the second digit of the Acc
+				 ; 37H
+				 CJNE A, #0AH, CHECK1
+CHECK1:          JC NUM1 ;Check if the number in A is lesser than 10 or 0AH
+LETTER1:         ADD A, #37H ; Add 37H to make the digit in A to the hex of its Ascii character as a letter
+                 SJMP DISP1
+NUM1:		     ADD A, #30H ; Add 30H to make the digit in A to the hex of its Ascii character as a number
+DISP1:		     ACALL SUB_DATAWRT
+				 ACALL SUB_DELAY
+				 
+				 MOV A, B
+				 CJNE A, #0AH, CHECK2
+CHECK2:          JC NUM2 ;Check if the number in A is lesser than 10 or 0AH
+LETTER2:         ADD A, #37H ; Add 37H to make the digit in A to the hex of its Ascii character as a letter
+                 SJMP DISP2
+NUM2:		     ADD A, #30H ; Add 30H to make the digit in A to the hex of its Ascii character as a number
+DISP2:		     ACALL SUB_DATAWRT
+				 ACALL SUB_DELAY				 
+				 
+				 MOV A, #' '
+				 ACALL SUB_DATAWRT
+				 ACALL SUB_DELAY
+				 RET
+				 
+SUB_DISPLAY_ONE_DIGIT_NUM: 
+
+/*
+** Display on a LCD the numbers stored in D:30H through D:39H
+*/
+SUB_DISPLAY_LIST: 
+                 MOV R3, #05H ; Max number of integers per line, if each one is two digits + ' '
+                 MOV R2, #0AH ; Number of integers to be displayed
+				 MOV R1, #30H ; Pointer to the first number of the number list
+				 MOV A, #81H ;Move cursor to line 1, position 1
+                 ACALL SUB_COMMANDWRT
+				 ACALL SUB_DELAY
+DISPLAY_NEXT:    MOV A, @R1
+                 ACALL SUB_DISPLAY_TWO_DIGIT_NUM
+				 INC R1
+				 DJNZ R3, NEXT_CHAR
+NEXT_LINE:       MOV R3, #05H
+                 MOV A, #0C1H
+                 ACALL SUB_COMMANDWRT
+				 ACALL SUB_DELAY
+NEXT_CHAR:		 DJNZ R2, DISPLAY_NEXT
+				 RET
+
+
+
+			 
+; -------------------- Helper subroutines ----------------------	
+/*
+** Subroutine that initializes a LCD screen.
+*/ 
+SUB_INIT:      
+               MOV A, #38H ; 2 lines, 7x8 matrix
+			   ACALL SUB_COMMANDWRT
+			   ACALL SUB_DELAY
+			   MOV A, #0EH ; Screen on, cursor on
+			   ACALL SUB_COMMANDWRT
+			   ACALL SUB_DELAY
+			   MOV A, #01AH ; Clear screen
+			   ACALL SUB_COMMANDWRT
+			   ACALL SUB_DELAY
+			   MOV A, #81H ; Shift cursor right
+			   ACALL SUB_COMMANDWRT
+			   ACALL SUB_DELAY
+			   ;MOV A, #84H ; Move cursor to line 1, position 3
+			   ;ACALL SUB_COMMANDWRT
+			   ;ACALL SUB_DELAY
+			   RET
+		
+/*
+** Subroutine that writes the command at A to the LCD screen.
+*/ 
+SUB_COMMANDWRT: 
+               MOV P1, A
+               CLR P2.0        ; Rs = 0 Command
+			   CLR P2.1        ; R/W' = 0 Write
+			   SETB P2.2
+			   ACALL SUB_DELAY
+			   CLR P2.2
+			   RET
+
+/*
+** Subroutine that writes the data at A to the LCD screen.
+*/ 
+SUB_DATAWRT:   
+               MOV P1, A
+			   SETB P2.0         ; Rs = 1 Data
+			   CLR P2.1          ; R/W' = 0 Write
+			   SETB P2.2
+			   ACALL SUB_DELAY
+			   CLR P2.2
+			   RET
+/*
+** Subroutine that generates a 250 ms delay, generally used between LCD operations.
+*/ 			   
+SUB_DELAY: 
+           MOV R0, #02H
+REPEAT:    MOV TH0, #3CH
+           MOV TL0, #0B0H
+           MOV TMOD, #01H
+           SETB TR0
+		   LOOP_WAIT: JNB TF0, LOOP_WAIT
+		   CLR TR0
+		   CLR TF0
+		   DJNZ R0, REPEAT
+		   RET
+END
