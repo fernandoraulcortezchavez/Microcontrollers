@@ -38,7 +38,7 @@ LOSS_DELAY1:	MOV R1, #03H
 				JB P3.1, POINT_FOR_A ; Player B pressed before correct time
 				ACALL SUB_DELAY
 				DJNZ R1, LOSS_REPEAT1
-				 
+					
 	            DJNZ R5, SHIFT_R
 				LCALL SUB_BALL_RIGHT
 				ACALL SUB_DELAY
@@ -336,9 +336,17 @@ SUB_A_WON:            MOV A, #01H
 					  ACALL SUB_DISPLAY_STRING
 					  ACALL SUB_BIG_DELAY
 					  ACALL SUB_BIG_DELAY
+					  MOV A, #01H
+					  ACALL SUB_COMMANDWRT
+					  ACALL SUB_DELAY
+					  MOV A, #80H
+					  ACALL SUB_COMMANDWRT
+					  ACALL SUB_DELAY
+					  MOV R1, 15
+					  FILL:	MOV A, '#'
+							ACALL SUB_DATAWRT
+							DJNZ R1, FILL
 					  ACALL SUB_BIG_DELAY
-					  ACALL SUB_BIG_DELAY
-					  
 					  RET
 
 /*
@@ -354,7 +362,16 @@ SUB_B_WON:            MOV A, #01H
 					  ACALL SUB_DISPLAY_STRING
 					  ACALL SUB_BIG_DELAY
 					  ACALL SUB_BIG_DELAY
-					  ACALL SUB_BIG_DELAY
+					  MOV A, #01H
+					  ACALL SUB_COMMANDWRT
+					  ACALL SUB_DELAY
+					  MOV A, #80H
+					  ACALL SUB_COMMANDWRT
+					  ACALL SUB_DELAY
+					  MOV R1, 15
+					  FILL:	MOV A, '#'
+							ACALL SUB_DATAWRT
+							DJNZ R1, FILL
 					  ACALL SUB_BIG_DELAY
 					  RET
 					  
@@ -394,7 +411,7 @@ CHECK_FOUR:           MOV DPTR, #FOUR_PTS
 
 ;------------------------------------------------------------
 ORG 300H
-CERO_PTS: DB 'Cero',0
+CERO_PTS: DB 'Zero',0
 ONE_PTS: DB 'One',0
 TWO_PTS: DB 'Two',0
 THREE_PTS: DB 'Three',0
