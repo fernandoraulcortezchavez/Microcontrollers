@@ -339,6 +339,14 @@ SUB_A_WON:            MOV A, #01H
 					  MOV A, #01H
 					  ACALL SUB_COMMANDWRT
 					  ACALL SUB_DELAY
+					  MOV A, #0C0H
+					  ACALL SUB_COMMANDWRT
+					  ACALL SUB_DELAY
+					  MOV R1, 15
+					  FILL:	MOV A, '#'
+							ACALL SUB_DATAWRT
+							DJNZ R1, FILL
+					  ACALL SUB_BIG_DELAY
 					  MOV A, #80H
 					  ACALL SUB_COMMANDWRT
 					  ACALL SUB_DELAY
@@ -365,6 +373,14 @@ SUB_B_WON:            MOV A, #01H
 					  MOV A, #01H
 					  ACALL SUB_COMMANDWRT
 					  ACALL SUB_DELAY
+					  MOV A, #0C0H
+					  ACALL SUB_COMMANDWRT
+					  ACALL SUB_DELAY
+					  MOV R1, 15
+					  FILL:	MOV A, '#'
+							ACALL SUB_DATAWRT
+							DJNZ R1, FILL
+					  ACALL SUB_BIG_DELAY
 					  MOV A, #80H
 					  ACALL SUB_COMMANDWRT
 					  ACALL SUB_DELAY
