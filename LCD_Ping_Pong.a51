@@ -336,25 +336,7 @@ SUB_A_WON:            MOV A, #01H
 					  ACALL SUB_DISPLAY_STRING
 					  ACALL SUB_BIG_DELAY
 					  ACALL SUB_BIG_DELAY
-					  MOV A, #01H
-					  ACALL SUB_COMMANDWRT
-					  ACALL SUB_DELAY
-					  MOV A, #0C0H
-					  ACALL SUB_COMMANDWRT
-					  ACALL SUB_DELAY
-					  MOV R1, 15
-					  FILL:	MOV A, '#'
-							ACALL SUB_DATAWRT
-							DJNZ R1, FILL
-					  ACALL SUB_BIG_DELAY
-					  MOV A, #80H
-					  ACALL SUB_COMMANDWRT
-					  ACALL SUB_DELAY
-					  MOV R1, 15
-					  FILL:	MOV A, '#'
-							ACALL SUB_DATAWRT
-							DJNZ R1, FILL
-					  ACALL SUB_BIG_DELAY
+					  LCALL SUB_ANIMATION
 					  RET
 
 /*
@@ -370,25 +352,7 @@ SUB_B_WON:            MOV A, #01H
 					  ACALL SUB_DISPLAY_STRING
 					  ACALL SUB_BIG_DELAY
 					  ACALL SUB_BIG_DELAY
-					  MOV A, #01H
-					  ACALL SUB_COMMANDWRT
-					  ACALL SUB_DELAY
-					  MOV A, #0C0H
-					  ACALL SUB_COMMANDWRT
-					  ACALL SUB_DELAY
-					  MOV R1, 15
-					  FILL:	MOV A, '#'
-							ACALL SUB_DATAWRT
-							DJNZ R1, FILL
-					  ACALL SUB_BIG_DELAY
-					  MOV A, #80H
-					  ACALL SUB_COMMANDWRT
-					  ACALL SUB_DELAY
-					  MOV R1, 15
-					  FILL:	MOV A, '#'
-							ACALL SUB_DATAWRT
-							DJNZ R1, FILL
-					  ACALL SUB_BIG_DELAY
+					  LCALL SUB_ANIMATION
 					  RET
 					  
 
@@ -424,6 +388,33 @@ CHECK_THREE:          CJNE A, #03, CHECK_FOUR
 					  RET
 CHECK_FOUR:           MOV DPTR, #FOUR_PTS
                       RET
+					  
+;-------------- Animation subroutine --------------------					  
+SUB_ANIMATION:        MOV A, #01H
+					  ACALL SUB_COMMANDWRT
+					  ACALL SUB_DELAY
+                      
+					  MOV R1, #0FH
+					  FILL1:	
+								MOV A, #0C0H
+								SUM A, R1
+								ACALL SUB_COMMANDWRT
+								ACALL SUB_DELAY
+								MOV A, #'-'
+							    ACALL SUB_DATAWRT
+								ACALL SUB_DELAY
+								DEC R1
+								MOV A, #80H
+								SUM A, R1
+								ACALL SUB_COMMANDWRT
+								ACALL SUB_DELAY
+								MOV A, #'-'
+							    ACALL SUB_DATAWRT
+								ACALL SUB_DELAY
+							    DJNZ R1, FILL1
+								
+					  ACALL SUB_BIG_DELAY
+					  RET
 
 ;------------------------------------------------------------
 ORG 300H
