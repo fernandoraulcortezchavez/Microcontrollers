@@ -1,9 +1,9 @@
-EXTRN CODE (SUB_INIT_ASINC, SUB_INIT_SERIAL_INT, SUB_TRANSF, SUB_RECEIVE)
+EXTRN CODE (SUB_INIT_ASINC_WRT, SUB_INIT_ASINC_READ, SUB_INIT_SERIAL_INT, SUB_TRANSF, SUB_RECEIVE)
 
 ORG 00H
 MOV P2, #0FFH	;P2 is input for rows
 SETB P3.4 ; Will be used as the external interrupt of the other microcontroller
-LCALL SUB_INIT_ASINC ; Serial port initialization
+LCALL SUB_INIT_ASINC_WRT ; Serial port initialization
 
 LOOP:	MOV P1, #00H	;P1 is OUTPUT for columns
 		MOV A, P2
