@@ -1,24 +1,3 @@
-EXTRN CODE (SUB_INIT_ASINC, SUB_INIT_SERIAL_INT, SUB_TRANSF, SUB_RECEIVE)
-	
-ORG 00H
-/* P3.2 is the trigger
-** P2.4 to P2.7 is the hex input of the keyboard matrix processing
-** P0.0 is the order button
-** P0.1 is the clear button
-** 00H is the bit address for the first digit or second digit
-** R5 delay register
-** R1 data memory pointer register
-** R3 is the number counter
-*/
-CURSOR_LEFT_COMMAND EQU 10H
-CURSOR_RIGHT_COMMAND EQU 14H
-		
-FIRST_DIGIT_BIT EQU 00H
-CURRENT_POS_BYTE EQU 40H
-NUMBER_COUNT_BYTE EQU 41H
-STARTING_POS_BYTE EQU 42H
-DIGIT_SAVE_BYTE EQU 43H
-
 SJMP MAIN
 
 ORG 23H
@@ -28,15 +7,15 @@ SERIAL_INT:
                SJMP WAIT_UNPRESS ; There are ten numbers displayed, ignore any new digits received
 
 PROCESS_DIGIT: LCALL SUB_RECEIVE ; Serial receive
-			   
+			   ANL A, #00001111B
 	           JNB FIRST_DIGIT_BIT, FIRST_DIGIT
-			   SWAP A
+			   ;SWAP A
 			   MOV DIGIT_SAVE_BYTE, A
 			   ACALL SUB_DISP_ONE_DIGIT_NUM
 			   MOV A, DIGIT_SAVE_BYTE
 			   MOV R1, CURRENT_POS_BYTE
 			   ADD A, @R1
-			   MOV @R1, A
+			   M	OV @R1, A
 			   MOV A, #' '
 			   ACALL SUB_DATAWRT
 			   ACALL SUB_DELAY
@@ -56,7 +35,7 @@ PROCESS_DIGIT: LCALL SUB_RECEIVE ; Serial receive
 			   			   
 FIRST_DIGIT:   MOV R1, CURRENT_POS_BYTE
                MOV @R1, A
-               SWAP A ; Move the digit to the low nibble to display it on the LCD
+               ;SWAP A ; Move the digit to the low nibble to display it on the LCD
 			   ACALL SUB_DISP_ONE_DIGIT_NUM
                CPL FIRST_DIGIT_BIT
                
@@ -74,6 +53,7 @@ MAIN:
 	  MOV P2, #0F0H ; High nibble of P2 as inputs
       SETB P3.2 ; P3.2 as input
 	  ACALL SUB_DELAY ; Delay to allow P3.2 to be grounded by external hardware
+	  LCALL SUB_INIT_ASINC_READ
       LCALL SUB_INIT_SERIAL_INT
 	  
 HERE: JB P0.0, CLEAR_PRESSED
