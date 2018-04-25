@@ -1,3 +1,24 @@
+EXTRN CODE (SUB_INIT_ASINC_WRT, SUB_INIT_ASINC_READ, SUB_INIT_SERIAL_INT, SUB_TRANSF, SUB_RECEIVE)
+	
+ORG 00H
+/* P3.2 is the trigger
+** P2.4 to P2.7 is the hex input of the keyboard matrix processing
+** P0.0 is the order button
+** P0.1 is the clear button
+** 00H is the bit address for the first digit or second digit
+** R5 delay register
+** R1 data memory pointer register
+** R3 is the number counter
+*/
+CURSOR_LEFT_COMMAND EQU 10H
+CURSOR_RIGHT_COMMAND EQU 14H
+		
+FIRST_DIGIT_BIT EQU 00H
+CURRENT_POS_BYTE EQU 40H
+NUMBER_COUNT_BYTE EQU 41H
+STARTING_POS_BYTE EQU 42H
+DIGIT_SAVE_BYTE EQU 43H
+
 SJMP MAIN
 
 ORG 23H
@@ -14,8 +35,9 @@ PROCESS_DIGIT: LCALL SUB_RECEIVE ; Serial receive
 			   ACALL SUB_DISP_ONE_DIGIT_NUM
 			   MOV A, DIGIT_SAVE_BYTE
 			   MOV R1, CURRENT_POS_BYTE
+			   
 			   ADD A, @R1
-			   M	OV @R1, A
+			   MOV @R1, A
 			   MOV A, #' '
 			   ACALL SUB_DATAWRT
 			   ACALL SUB_DELAY
@@ -34,7 +56,9 @@ PROCESS_DIGIT: LCALL SUB_RECEIVE ; Serial receive
 			   SJMP WAIT_UNPRESS
 			   			   
 FIRST_DIGIT:   MOV R1, CURRENT_POS_BYTE
+               SWAP A
                MOV @R1, A
+			   SWAP A ; Unswap
                ;SWAP A ; Move the digit to the low nibble to display it on the LCD
 			   ACALL SUB_DISP_ONE_DIGIT_NUM
                CPL FIRST_DIGIT_BIT
