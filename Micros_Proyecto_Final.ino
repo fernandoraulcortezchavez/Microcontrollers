@@ -1,4 +1,3 @@
-
 const int frontSensor = 4;
 const int rightSensor = 5;
 const int backSensor = 6;
@@ -34,7 +33,7 @@ void turnUntilFacingForward(int rightPWM, int leftPWM) {
   {
     analogWrite(rightMotor, rightPWM);
     analogWrite(leftMotor, leftPWM);
-    delay(5);
+    delay(50);
     readAllBeaconSensors();
   }  
 }
@@ -61,9 +60,10 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  /*readAllBeaconSensors();
+  readAllBeaconSensors();
   if(frontReading){
-    
+    digitalWrite(rightMotor, HIGH);
+    digitalWrite(leftMotor, HIGH);
   }
   else if (rightReading) {
     turnUntilFacingForward(100, 140);
@@ -73,11 +73,13 @@ void loop() {
   }
   else if (leftReading) {
     turnUntilFacingForward(140, 100);
-  }*/
+  }
   currentDistance = distanceToNearestObject();
   Serial.print("Distance: ");
   Serial.println(currentDistance);
-  delay(500);
-
-  
+  if(distance > 100){
+    digitalWrite(rightMotor, LOW);
+    digitalWrite(leftMotor, HLOW);
+  }
+  delay(500);  
 }
