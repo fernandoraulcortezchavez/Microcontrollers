@@ -77,7 +77,7 @@ void loop() {
   currentDistance = distanceToNearestObject();
   Serial.print("Distance: ");
   Serial.println(currentDistance);
-  if(distance > 100){
+  if(distance < 10){
     digitalWrite(rightMotor, LOW);
     digitalWrite(leftMotor, HLOW);
   }
