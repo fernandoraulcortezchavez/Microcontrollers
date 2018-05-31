@@ -12,10 +12,10 @@ boolean frontReading = false;
 boolean rightReading = false;
 boolean backReading = false;
 boolean leftReading = false;
-boolean found = false;
+boolean carFound = false;
+boolean goalFound = false;
 
 unsigned long currentDistance = 100;
-int photoValue = 0;
 
 void printReadings(){
   Serial.print("Distance: ");
@@ -60,14 +60,51 @@ void stopMotors(){
   analogWrite(leftMotor, 0);
 }
 
+void turnNinetyDegreesRight(int times){
+  for (int i = 0; i < times; i++){
+  analogWrite(rightMotor, 0);
+  analogWrite(leftMotor, 200);
+  delay(600); //Tentative to let run the motors
+  Serial.println("Running");
+  }
+  stopMotors();
+}
+
 void seekLight(){
-  photoValue = analogRead(photoSensor);
+    /*photoValue = analogRead(photoSensor);
     while(photoValue > 500){
       analogWrite(rightMotor, 200);
       analogWrite(leftMotor, 0);
     }
     analogWrite(rightMotor, 200);
-    analogWrite(leftMotor, 200);
+    analogWrite(leftMotor, 200);*/
+    int bestPhotoReading = 1023;
+    int currentPhotoReading = 2000;
+    currentPhotoReading = analogRead(photoSensor);
+    
+    while(currentPhotoReading > 250) { 
+      analogWrite(rightMotor, 200);
+      analogWrite(leftMotor, 200);
+      delay(500); // Let the car go forward some time
+      currentPhotoReading = analogRead(photoSensor);
+      Serial.print("Current: ");
+      Serial.print(currentPhotoReading);
+      Serial.print(" Best: ");
+      Serial.println(bestPhotoReading);
+      if (currentPhotoReading > bestPhotoReading) {
+        // Return to previous point to choose another direction.
+        turnNinetyDegreesRight(2);
+        analogWrite(rightMotor, 200);
+        analogWrite(leftMotor, 200);
+        delay(500);
+        turnNinetyDegreesRight(1);
+      }
+      else{
+        // A better reading was found, continue that way
+        bestPhotoReading = currentPhotoReading;
+      }      
+    }
+    goalFound = true;
 }
 
 unsigned long distanceToNearestObject(){
@@ -93,37 +130,78 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  readAllBeaconSensors();
-  printReadings();
-  //turnUntilFacingForward(200, 0);
-  if(frontReading){
-    currentDistance = distanceToNearestObject();
-    if (currentDistance > 15){
-      analogWrite(rightMotor, 160);
-      analogWrite(leftMotor, 160);
+  /*
+   * Find the slave car
+   */
+  while(true){
+    //turnUntilFacingForward(0, 200);
+    //turnNinetyDegreesRight(1);     // TESTING
+    //delay(1500);
+    seekLight();
+    if (goalFound){
+      stopMotors();
+      while(true){
+        delay(1000);
+      }
+    }
+  }
+  if(!carFound){
+    readAllBeaconSensors();
+    printReadings();
+    if(frontReading){
+      currentDistance = distanceToNearestObject();
+      if (currentDistance > 15){
+        analogWrite(rightMotor, 140);
+        analogWrite(leftMotor, 160);
+      }
+      else{
+        analogWrite(rightMotor, 0);
+        analogWrite(leftMotor, 0);
+        /*while(true){
+            delay(100);
+        }*/
+        carFound = true;
+      }   
+    }
+    else if (rightReading) {
+      turnUntilFacingForward(0, 200);
+    }
+    else if (backReading) {
+      turnUntilFacingForward(0, 250);
+    }
+    else if (leftReading) {
+      turnUntilFacingForward(200, 0);
     }
     else{
-      stopMotors();
-      found = true;
+      analogWrite(rightMotor, 0);
+      analogWrite(leftMotor, 0);
     }
-    
   }
-  else if (rightReading) {
-    turnUntilFacingForward(0, 200);
+  else if(!goalFound){
+    /*
+     * Find the goal by reading the fotoresistors and heading to areas with greater light
+     */
+     seekLight();
   }
-  else if (backReading) {
-    turnUntilFacingForward(0, 250);
+  else {
+    /*
+     * Goal reached. Stop car.
+     */
+    while(true){
+      delay(10000);
+    }
   }
-  else if (leftReading) {
-    turnUntilFacingForward(200, 0);
+  //////////////////////////////////////////////////////////
+  
+  
+  /*if(currentDistance < 15){
+    digitalWrite(rightMotor, LOW);
+    digitalWrite(leftMotor, LOW);
   }
   else{
-    stopMotors();
-  }
-
-  if(found){
-    seekLight();
-  }
+    analogWrite(rightMotor, 150);
+    analogWrite(leftMotor, 150);
+  }*/
+  
   delay(50);  
 }
