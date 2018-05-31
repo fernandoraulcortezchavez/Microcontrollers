@@ -1,6 +1,6 @@
-const int frontSensor = 4;
-const int rightSensor = 5;
-const int backSensor = 6;
+const int frontSensor = 6;
+const int rightSensor = 4;
+const int backSensor = 5;
 const int leftSensor = 7;
 const int ultrasonicTrig = 8;
 const int ultrasonicEcho = 9;
@@ -14,6 +14,19 @@ boolean leftReading = false;
 
 unsigned long currentDistance = 100;
 
+void printReadings(){
+  Serial.print("Distance: ");
+  Serial.print(currentDistance);
+  Serial.print(" Front: ");
+  Serial.print(frontReading);
+  Serial.print(" Right: ");
+  Serial.print(rightReading);
+  Serial.print(" Left: ");
+  Serial.print(leftReading);
+  Serial.print(" Back: ");
+  Serial.println(backReading);
+}
+
 boolean isSensorDetecting(int beaconSensorPin) {
   if (digitalRead(beaconSensorPin) == HIGH)
     return true;
@@ -21,16 +34,17 @@ boolean isSensorDetecting(int beaconSensorPin) {
 }
 
 void readAllBeaconSensors() {
-  frontReading = isSensorDetecting(frontSensor);
-  rightReading = isSensorDetecting(rightSensor);
-  backReading = isSensorDetecting(backSensor);
-  leftReading = isSensorDetecting(leftSensor);
+  frontReading = !isSensorDetecting(frontSensor);
+  rightReading = !isSensorDetecting(rightSensor);
+  backReading = !isSensorDetecting(backSensor);
+  leftReading = !isSensorDetecting(leftSensor);
 }
 
 
 void turnUntilFacingForward(int rightPWM, int leftPWM) {
   while(!(frontReading and not rightReading and not backReading and not leftReading))
   {
+    printReadings();
     analogWrite(rightMotor, rightPWM);
     analogWrite(leftMotor, leftPWM);
     delay(50);
@@ -44,6 +58,8 @@ unsigned long distanceToNearestObject(){
   digitalWrite(ultrasonicTrig, LOW);
   return pulseIn(ultrasonicEcho, HIGH) * 0.034 / 2;
 }
+
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -61,25 +77,48 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   readAllBeaconSensors();
+  printReadings();
+  //turnUntilFacingForward(200, 0);
   if(frontReading){
-    digitalWrite(rightMotor, HIGH);
-    digitalWrite(leftMotor, HIGH);
+    currentDistance = distanceToNearestObject();
+    if (currentDistance > 15){
+      analogWrite(rightMotor, 140yu);
+      analogWrite(leftMotor, 160);
+    }
+    else{
+      analogWrite(rightMotor, 0);
+      analogWrite(leftMotor, 0);
+      while(true){
+          delay(100);
+      }
+    }
+    
   }
   else if (rightReading) {
-    turnUntilFacingForward(100, 140);
-  }
-  else if (backReading) {
     turnUntilFacingForward(0, 200);
   }
+  else if (backReading) {
+    turnUntilFacingForward(0, 250);
+  }
   else if (leftReading) {
-    turnUntilFacingForward(140, 100);
+    turnUntilFacingForward(200, 0);
   }
-  currentDistance = distanceToNearestObject();
-  Serial.print("Distance: ");
-  Serial.println(currentDistance);
-  if(distance < 10){
+  else{
+    analogWrite(rightMotor, 0);
+    analogWrite(leftMotor, 0);
+  }
+
+  //////////////////////////////////////////////////////////
+  
+  
+  /*if(currentDistance < 15){
     digitalWrite(rightMotor, LOW);
-    digitalWrite(leftMotor, HLOW);
+    digitalWrite(leftMotor, LOW);
   }
-  delay(500);  
+  else{
+    analogWrite(rightMotor, 150);
+    analogWrite(leftMotor, 150);
+  }*/
+  
+  delay(50);  
 }
