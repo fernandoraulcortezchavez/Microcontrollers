@@ -55,6 +55,21 @@ void turnUntilFacingForward(int rightPWM, int leftPWM) {
   }  
 }
 
+void stopMotors(){
+  analogWrite(rightMotor, 0);
+  analogWrite(leftMotor, 0);
+}
+
+void seekLight(){
+  photoValue = analogRead(photoSensor);
+    while(photoValue > 500){
+      analogWrite(rightMotor, 200);
+      analogWrite(leftMotor, 0);
+    }
+    analogWrite(rightMotor, 200);
+    analogWrite(leftMotor, 200);
+}
+
 unsigned long distanceToNearestObject(){
   digitalWrite(ultrasonicTrig, HIGH);
   delay(10);
@@ -89,8 +104,7 @@ void loop() {
       analogWrite(leftMotor, 160);
     }
     else{
-      analogWrite(rightMotor, 0);
-      analogWrite(leftMotor, 0);
+      stopMotors();
       found = true;
     }
     
@@ -105,18 +119,11 @@ void loop() {
     turnUntilFacingForward(200, 0);
   }
   else{
-    analogWrite(rightMotor, 0);
-    analogWrite(leftMotor, 0);
+    stopMotors();
   }
 
   if(found){
-    photoValue = analogRead(photoSensor);
-    while(photoValue > 500){
-      analogWrite(rightMotor, 200);
-      analogWrite(leftMotor, 0);
-    }
-    analogWrite(rightMotor, 200);
-    analogWrite(leftMotor, 200);
+    seekLight();
   }
   delay(50);  
 }
