@@ -6,13 +6,16 @@ const int ultrasonicTrig = 8;
 const int ultrasonicEcho = 9;
 const int rightMotor = 11;
 const int leftMotor = 12;
+const int photoSensor = A0;
 
 boolean frontReading = false;
 boolean rightReading = false;
 boolean backReading = false;
 boolean leftReading = false;
+boolean found = false;
 
 unsigned long currentDistance = 100;
+int photoValue = 0;
 
 void printReadings(){
   Serial.print("Distance: ");
@@ -82,15 +85,13 @@ void loop() {
   if(frontReading){
     currentDistance = distanceToNearestObject();
     if (currentDistance > 15){
-      analogWrite(rightMotor, 140yu);
+      analogWrite(rightMotor, 160);
       analogWrite(leftMotor, 160);
     }
     else{
       analogWrite(rightMotor, 0);
       analogWrite(leftMotor, 0);
-      while(true){
-          delay(100);
-      }
+      found = true;
     }
     
   }
@@ -108,17 +109,14 @@ void loop() {
     analogWrite(leftMotor, 0);
   }
 
-  //////////////////////////////////////////////////////////
-  
-  
-  /*if(currentDistance < 15){
-    digitalWrite(rightMotor, LOW);
-    digitalWrite(leftMotor, LOW);
+  if(found){
+    photoValue = analogRead(photoSensor);
+    while(photoValue > 500){
+      analogWrite(rightMotor, 200);
+      analogWrite(leftMotor, 0);
+    }
+    analogWrite(rightMotor, 200);
+    analogWrite(leftMotor, 200);
   }
-  else{
-    analogWrite(rightMotor, 150);
-    analogWrite(leftMotor, 150);
-  }*/
-  
   delay(50);  
 }
