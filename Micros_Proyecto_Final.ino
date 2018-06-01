@@ -1,3 +1,6 @@
+#include <Time.h>
+#include <TimeLib.h>
+
 const int frontSensor = 6;
 const int rightSensor = 4;
 const int backSensor = 5;
@@ -64,10 +67,12 @@ void turnNinetyDegreesRight(int times){
   for (int i = 0; i < times; i++){
   analogWrite(rightMotor, 0);
   analogWrite(leftMotor, 200);
-  delay(600); //Tentative to let run the motors
+  delay(550); //Tentative to let run the motors
+  stopMotors();
+  delay(200);
   Serial.println("Running");
   }
-  stopMotors();
+  
 }
 
 void seekLight(){
@@ -80,13 +85,50 @@ void seekLight(){
     analogWrite(leftMotor, 200);*/
     int bestPhotoReading = 1023;
     int currentPhotoReading = 2000;
+    long previousTime;
+    long currentTime;
     currentPhotoReading = analogRead(photoSensor);
     
-    while(currentPhotoReading > 250) { 
-      analogWrite(rightMotor, 200);
-      analogWrite(leftMotor, 200);
-      delay(500); // Let the car go forward some time
-      currentPhotoReading = analogRead(photoSensor);
+    while(!goalFound) {
+      previousTime = millis();
+      while(true){
+        analogWrite(rightMotor, 200);
+        analogWrite(leftMotor, 220);
+        currentTime = millis();
+        if (currentTime - previousTime >= 1300){
+          // Return to previous point to choose another direction.
+         turnNinetyDegreesRight(2);
+         analogWrite(rightMotor, 200);
+         analogWrite(leftMotor, 220);
+         delay(1300);
+         stopMotors();
+         delay(10);
+         turnNinetyDegreesRight(1);
+         delay(300);
+         break;
+        }
+        else{
+         currentPhotoReading = analogRead(photoSensor);
+         Serial.print("Current: ");
+         Serial.print(currentPhotoReading);
+         Serial.print(" Best: ");
+         Serial.println(bestPhotoReading);
+         if (currentPhotoReading < bestPhotoReading) {
+           bestPhotoReading = currentPhotoReading;
+           previousTime = currentTime;
+           if (currentPhotoReading < 600){
+            goalFound = true;
+            break;
+           }
+         }
+        }
+       }
+       
+       
+      }
+      
+      //delay(800); // Let the car go forward some time
+      /*currentPhotoReading = analogRead(photoSensor);
       Serial.print("Current: ");
       Serial.print(currentPhotoReading);
       Serial.print(" Best: ");
@@ -95,15 +137,15 @@ void seekLight(){
         // Return to previous point to choose another direction.
         turnNinetyDegreesRight(2);
         analogWrite(rightMotor, 200);
-        analogWrite(leftMotor, 200);
-        delay(500);
+        analogWrite(leftMotor, 230);
+        delay(800);
         turnNinetyDegreesRight(1);
       }
       else{
         // A better reading was found, continue that way
         bestPhotoReading = currentPhotoReading;
-      }      
-    }
+      }  */    
+    
     goalFound = true;
 }
 
@@ -133,7 +175,7 @@ void loop() {
   /*
    * Find the slave car
    */
-  while(true){
+  /*while(true){
     //turnUntilFacingForward(0, 200);
     //turnNinetyDegreesRight(1);     // TESTING
     //delay(1500);
@@ -144,15 +186,15 @@ void loop() {
         delay(1000);
       }
     }
-  }
+  }*/
   if(!carFound){
     readAllBeaconSensors();
     printReadings();
     if(frontReading){
       currentDistance = distanceToNearestObject();
       if (currentDistance > 15){
-        analogWrite(rightMotor, 140);
-        analogWrite(leftMotor, 160);
+        analogWrite(rightMotor, 160);
+        analogWrite(leftMotor, 180);
       }
       else{
         analogWrite(rightMotor, 0);
@@ -179,7 +221,7 @@ void loop() {
   }
   else if(!goalFound){
     /*
-     * Find the goal by reading the fotoresistors and heading to areas with greater light
+     * Find the goal by reading the fotoresistor and heading to areas with greater light
      */
      seekLight();
   }
